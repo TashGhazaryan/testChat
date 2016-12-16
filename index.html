@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Bootstrap Example</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <style>
+            #chat {
+                height: 500px;
+            }
+            #contentWrap {
+                display: none;
+            }
+            #chatWRap {
+                float: left;
+                border:1px solid black;
+            }
+            .error {
+                color: red;
+            }
+            .whisper {
+                color: grey;
+                font-style: italic;;
+            }
+        </style>
+
+    </head>
+    <body>
+
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <div id="nickWrap">
+                <p>Enter a username</p>
+                <p id="nickError"></p>
+                <form id="setNickname">
+                    <input size="35" id="nickname"/>
+                    <input type="submit"/>
+                </form>
+            </div>
+
+
+            <div id="contentWrap">
+                <div id="chatWRap">
+                    <div id="chat"></div>
+                    <form id="send-message">
+                        <input size="35" id="message">
+                        <input type="submit">
+                    </form>
+                    <form method="post" enctype="multipart/form-data" action="/img" id="file">
+                        <input type="file" name="myImage">
+                        <input class="btn-lg" type="submit" name="submit" value="submit">
+                    </form>
+                </div>
+                <div id="users"></div>
+            </div>
+
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+
+
+
+
+
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+   <!-- <script src="index.js"></script> -->
+    <script>
+        jQuery(function ($) {
+            var socket = io.connect();
+            var $nickForm = $('#setNickname');
+            var $nickError = $('#nickError');
+            var $nickBox = $('#nickname');
+            var $messageForm = $('#send-message');
+            var $messageBox = $('#message');
+            var $chat = $('#chat');
+            var $users = $('#users');
+            var $file = $('#file');
+
+
+            $file.submit( function (e) {
+                var data = new FormData($(this)[0]);
+
+                console.log($(this))
+                console.log(data);
+                jQuery.ajax({
+                    url: '/img',
+                    data: data,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    type: 'POST',
+                    success: function(data){
+                        $chat.append('<img style="height: 150px; weight" src="'+data+'"><br>');
+                    }
+                });
+                return false;
+
+            });
+
+            $nickForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('new user',$nickBox.val(), function (data) {
+                    if (data) {
+                        $('#nickWrap').hide();
+                        $('#contentWrap').show();
+                    } else {
+                        $nickError.html('That username is already taken')
+                    }
+                });
+                $nickBox.val('');
+                return false;
+            });
+
+            socket.on('usernames', function (data) {
+                var html = '';
+                for( var i = 0; i < data.length; ++i) {
+                    html += data[i] + '<br>';
+                }
+                $users.html(html);
+
+            });
+
+            $messageForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('send message',$messageBox.val(), function (data) {
+                    $chat.append('<span class="error"><b>'+ data + "</span><br>");
+                });
+                $messageBox.val('');
+            });
+
+            socket.on('new message', function (data) {
+                $chat.append('<span class="msg"><b>'+data.nick + ':</b>' + data.msg + "</span><br>");
+            });
+            socket.on('whisper', function (data) {
+                $chat.append('<span class="whisper"><b>'+data.nick + ':</b>' + data.msg + "</span><br>");
+            });
+
+
+            //var ctx = document.getElementById('canvas').getContext('2d');
+            socket.on("image", function(info) {
+                console.log('achieved');
+                if (info.image) {
+                    console.log('achieved');
+                    var img = new Image();
+                    img.src = 'data:image/jpeg;base64,' + info.buffer;
+                    ctx.drawImage(img, 0, 0);
+                } else {
+                    console.log('do not achieved')
+                }
+            });
+        })
+    </script>
+    </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+        <style>
+            #chat {
+                height: 500px;
+            }
+            #contentWrap {
+                display: none;
+            }
+            #chatWRap {
+                float: left;
+                border:1px solid black;
+            }
+            .error {
+                color: red;
+            }
+            .whisper {
+                color: grey;
+                font-style: italic;;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div id="nickWrap">
+            <p>Enter a username</p>
+            <p id="nickError"></p>
+            <form id="setNickname">
+                <input size="35" id="nickname">
+                <input type="submit">
+            </form>
+        </div>
+
+        <div id="contentWrap">
+            <div id="chatWRap">
+                <div id="chat"></div>
+                <form id="send-message">
+                    <input size="35" id="message">
+                    <input type="submit">
+                </form>
+                <form method="post" enctype="multipart/form-data" action="/img" id="file">
+                    <input type="file" name="myImage">
+                    <input type="submit" name="submit" value="submit">
+                </form>
+            </div>
+            <div id="users"></div>
+        </div>
+
+
+
+
+
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+
+        jQuery(function ($) {
+            var socket = io.connect();
+            var $nickForm = $('#setNickname');
+            var $nickError = $('#nickError');
+            var $nickBox = $('#nickname');
+            var $messageForm = $('#send-message');
+            var $messageBox = $('#message');
+            var $chat = $('#chat');
+            var $users = $('#users');
+            var $file = $('#file');
+
+
+            $file.submit( function (e) {
+                var data = new FormData($(this)[0]);
+
+                console.log($(this))
+                console.log(data);
+                jQuery.ajax({
+                    url: '/img',
+                    data: data,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    type: 'POST',
+                    success: function(data){
+                        $chat.append('<img style="height: 150px; weight" src="'+data+'"><br>');
+                    }
+                });
+                return false;
+
+            });
+            
+            $nickForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('new user',$nickBox.val(), function (data) {
+                    if (data) {
+                        $('#nickWrap').hide();
+                        $('#contentWrap').show();
+                    } else {
+                        $nickError.html('That username is already taken')
+                    }
+                });
+                $nickBox.val('');
+            });
+            
+            socket.on('usernames', function (data) {
+                var html = '';
+                for( var i = 0; i < data.length; ++i) {
+                    html += data[i] + '<br>';
+                }
+                $users.html(html);
+
+            });
+
+            $messageForm.submit(function (e) {
+                e.preventDefault();
+                socket.emit('send message',$messageBox.val(), function (data) {
+                    $chat.append('<span class="error"><b>'+ data + "</span><br>");
+                });
+                $messageBox.val('');
+            });
+            
+            socket.on('new message', function (data) {
+                $chat.append('<span class="msg"><b>'+data.nick + ':</b>' + data.msg + "</span><br>");
+            });
+            socket.on('whisper', function (data) {
+                $chat.append('<span class="whisper"><b>'+data.nick + ':</b>' + data.msg + "</span><br>");
+            });
+
+
+            //var ctx = document.getElementById('canvas').getContext('2d');
+            socket.on("image", function(info) {
+                console.log('achieved');
+                if (info.image) {
+                    console.log('achieved');
+                    var img = new Image();
+                    img.src = 'data:image/jpeg;base64,' + info.buffer;
+                    ctx.drawImage(img, 0, 0);
+                } else {
+                    console.log('do not achieved')
+                }
+            });
+        })
+    </script>
+    </body>
+</html>
+-->
